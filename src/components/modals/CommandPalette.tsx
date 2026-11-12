@@ -13,6 +13,7 @@ interface CommandPaletteProps {
   onSelectFunction: (fn: FunctionItem) => void;
   onSelectTier: (tier: any) => void;
   onClose: () => void;
+  onToggleStringsDock?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
@@ -20,7 +21,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onNavigateAddress,
   onSelectFunction,
   onSelectTier,
-  onClose
+  onClose,
+  onToggleStringsDock
 }) => {
   const [query, setQuery] = useState('');
 
@@ -29,6 +31,15 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     const q = query.toLowerCase().trim();
     if (!q) {
       return [
+        {
+          type: 'action',
+          title: 'Toggle Strings Window (Shift+F12)',
+          action: () => {
+            if (onToggleStringsDock) onToggleStringsDock();
+            onClose();
+          },
+          icon: FileText
+        },
         { type: 'view', title: 'Switch to Disassembly View', action: () => onSelectTier('disasm'), icon: Code },
         { type: 'view', title: 'Switch to Control Flow Graph (CFG)', action: () => onSelectTier('graph'), icon: Code },
         { type: 'view', title: 'Switch to Pseudo-C Decompiler', action: () => onSelectTier('pseudo_c'), icon: FileText },

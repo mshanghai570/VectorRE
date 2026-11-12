@@ -25,6 +25,7 @@ import { SettingsModal } from './components/modals/SettingsModal';
 import { UploadModal } from './components/modals/UploadModal';
 import { RenameModal } from './components/modals/RenameModal';
 import { CommentModal } from './components/modals/CommentModal';
+import { StringsDock } from './components/dock/StringsDock';
 
 const DEFAULT_SETTINGS: WorkbenchSettings = {
   theme: 'binja-charcoal',
@@ -56,6 +57,8 @@ export default function App() {
   const [xrefTargetAddress, setXrefTargetAddress] = useState<number>(0);
   const [renameTarget, setRenameTarget] = useState<{ address: number; name: string } | null>(null);
   const [commentTarget, setCommentTarget] = useState<{ address: number; comment?: string } | null>(null);
+  const [isBottomStringsOpen, setIsBottomStringsOpen] = useState(false);
+  const [bottomStringsHeight, setBottomStringsHeight] = useState(240);
 
   // Address Navigation History
   const [history, setHistory] = useState<number[]>([SAMPLE_BINARIES[0].functions[0]?.address || 0x100003a00]);
@@ -158,6 +161,13 @@ export default function App() {
         e.preventDefault();
         setXrefTargetAddress(selectedAddress);
         setShowXrefs(true);
+        return;
+      }
+
+      // Strings Window (Shift+F12 or Shift+S)
+      if ((e.shiftKey && e.key === 'F12') || (e.shiftKey && (e.key === 'S' || e.key === 's'))) {
+        e.preventDefault();
+        setIsBottomStringsOpen((prev) => !prev);
         return;
       }
 
@@ -272,6 +282,8 @@ export default function App() {
         onOpenCommandPalette={() => setShowCommandPalette(true)}
         onOpenSettings={() => setShowSettings(true)}
         onOpenUpload={() => setShowUpload(true)}
+        onToggleStringsDock={() => setIsBottomStringsOpen((prev) => !prev)}
+        isStringsDockOpen={isBottomStringsOpen}
       />
 
       {/* Main Workspace Split (Sidebar + Central Canvas) */}
@@ -286,10 +298,13 @@ export default function App() {
           }}
           onNavigateAddress={navigateToAddress}
           selectedAddress={selectedAddress}
+          onToggleBottomStringsDock={() => setIsBottomStringsOpen((prev) => !prev)}
+          isBottomStringsDockOpen={isBottomStringsOpen}
         />
 
         {/* Central Viewport Canvas */}
         <main className="flex-1 flex flex-col min-w-0 bg-[#0e1015] relative overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
           {activeTier === 'disasm' && (
             <DisassemblyView
               currentBinary={currentBinary}
@@ -380,6 +395,22 @@ export default function App() {
               }}
             />
           )}
+          </div>
+
+          {/* Bottom Dockable Strings Window (IDA Pro Shift+F12) */}
+          {isBottomStringsOpen && (
+            <StringsDock
+              currentBinary={currentBinary}
+              onNavigateAddress={navigateToAddress}
+              onOpenXrefs={(addr) => {
+                setXrefTargetAddress(addr);
+                setShowXrefs(true);
+              }}
+              onClose={() => setIsBottomStringsOpen(false)}
+              height={bottomStringsHeight}
+              onHeightChange={setBottomStringsHeight}
+            />
+          )}
         </main>
       </div>
 
@@ -394,6 +425,7 @@ export default function App() {
           }}
           onSelectTier={(tier) => setActiveTier(tier)}
           onClose={() => setShowCommandPalette(false)}
+          onToggleStringsDock={() => setIsBottomStringsOpen((prev) => !prev)}
         />
       )}
 

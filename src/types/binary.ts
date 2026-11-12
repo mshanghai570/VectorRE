@@ -156,6 +156,8 @@ export interface WorkbenchSettings {
   autoRunFlirt: boolean;
   luminaServerUrl: string;
   luminaMinConfidence: number;
+  sidebarDensity?: 'compact' | 'normal';
+  sidebarMode?: 'split' | 'tabs';
 }
 
 export interface BinaryFile {

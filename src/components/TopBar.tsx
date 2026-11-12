@@ -15,6 +15,8 @@ interface TopBarProps {
   onOpenCommandPalette: () => void;
   onOpenSettings: () => void;
   onOpenUpload: () => void;
+  onToggleStringsDock?: () => void;
+  isStringsDockOpen?: boolean;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -23,7 +25,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   setActiveTier,
   onOpenCommandPalette,
   onOpenSettings,
-  onOpenUpload
+  onOpenUpload,
+  onToggleStringsDock,
+  isStringsDockOpen
 }) => {
   return (
     <header className="flex items-center justify-between gap-8 px-5 py-2.5 bg-[#16181d] border-b border-[#282c37] text-slate-200 select-none shrink-0 z-30">
@@ -125,6 +129,22 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       {/* Zone 3: Primary action & utility affordances */}
       <div className="flex items-center gap-2 shrink-0">
+        {onToggleStringsDock && (
+          <button
+            onClick={onToggleStringsDock}
+            className={`flex items-center gap-1.5 px-2.5 py-1 text-xs rounded border transition-colors ${
+              isStringsDockOpen
+                ? 'bg-amber-950/70 text-amber-300 border-amber-600/50 font-medium shadow-sm'
+                : 'text-slate-400 bg-[#20242f] hover:bg-[#282d3b] hover:text-amber-300 border-[#313746]'
+            }`}
+            title="Toggle Strings Window (Shift+F12)"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            <span>Strings</span>
+            <kbd className="hidden xl:inline px-1 py-0.2 bg-[#12141a] rounded text-[10px] text-slate-500 font-mono">⇧F12</kbd>
+          </button>
+        )}
+
         <button
           onClick={onOpenCommandPalette}
           className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-slate-400 bg-[#20242f] hover:bg-[#282d3b] hover:text-slate-200 rounded border border-[#313746] transition-colors"
