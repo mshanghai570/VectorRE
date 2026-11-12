@@ -1,0 +1,6 @@
+{
+  "name": "VectorRE - Binary Ninja & IDA Pro Analysis Studio",
+  "description": "High-performance reverse engineering workbench combining Binary Ninja's UI and intermediate representations with IDA Pro's analysis engine, FLIRT signatures, Lumina metadata, CFG graph, and SDK scripting.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

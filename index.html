@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VectorRE - Binary Ninja & IDA Pro Analysis Studio</title>
+    <meta name="description" content="High-performance reverse engineering workbench combining Binary Ninja's UI and intermediate representations with IDA Pro's analysis engine, FLIRT signatures, Lumina metadata, CFG graph, and SDK scripting." />
+    <meta property="og:title" content="VectorRE - Binary Ninja & IDA Pro Analysis Studio" />
+    <meta property="og:description" content="High-performance reverse engineering workbench combining Binary Ninja's UI and intermediate representations with IDA Pro's analysis engine, FLIRT signatures, Lumina metadata, CFG graph, and SDK scripting." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        // Ensure network primitives are writable own properties on window so dev tools (like Eruda)
+        // do not fail with "Attempted to assign to readonly property" in strict mode / WebKit.
+        function makeWritable(target, prop) {
+          try {
+            if (!target || !(prop in target)) return;
+            var desc = Object.getOwnPropertyDescriptor(target, prop);
+            if (!desc || !desc.writable || !desc.configurable) {
+              var val = target[prop];
+              Object.defineProperty(target, prop, {
+                value: val,
+                writable: true,
+                configurable: true,
+                enumerable: desc ? desc.enumerable : true
+              });
+            }
+          } catch (e) {}
+        }
+
+        function prepareNetwork() {
+          var props = ['fetch', 'WebSocket', 'XMLHttpRequest', 'Request', 'Response', 'Headers'];
+          props.forEach(function(p) {
+            makeWritable(window, p);
+            if (window.Window && window.Window.prototype) {
+              try {
+                var pDesc = Object.getOwnPropertyDescriptor(window.Window.prototype, p);
+                if (pDesc && pDesc.get && !pDesc.set) {
+                  Object.defineProperty(window.Window.prototype, p, {
+                    get: pDesc.get,
+                    set: function(v) {
+                      Object.defineProperty(window, p, {
+                        value: v,
+                        writable: true,
+                        configurable: true,
+                        enumerable: true
+                      });
+                    },
+                    configurable: true,
+                    enumerable: pDesc.enumerable
+                  });
+                }
+              } catch (e) {}
+            }
+          });
+
+          if (window.XMLHttpRequest && window.XMLHttpRequest.prototype) {
+            ['open', 'send', 'setRequestHeader', 'abort', 'getAllResponseHeaders', 'getResponseHeader'].forEach(function(m) {
+              makeWritable(window.XMLHttpRequest.prototype, m);
+            });
+          }
+
+          if (window.WebSocket) {
+            ['CLOSED', 'CLOSING', 'CONNECTING', 'OPEN'].forEach(function(s) {
+              makeWritable(window.WebSocket, s);
+            });
+            if (window.WebSocket.prototype) {
+              ['send', 'close'].forEach(function(m) {
+                makeWritable(window.WebSocket.prototype, m);
+              });
+            }
+          }
+        }
+
+        prepareNetwork();
+
+        // Hook into window.eruda if injected by preview environments
+        var _eruda = window.eruda;
+        function wrapEruda(obj) {
+          if (!obj || obj.__patched) return obj;
+          obj.__patched = true;
+          var origInit = obj.init;
+          if (typeof origInit === 'function') {
+            obj.init = function(options) {
+              prepareNetwork();
+              try {
+                return origInit.apply(this, arguments);
+              } catch (err) {
+                try {
+                  var safeOptions = Object.assign({}, options || {}, {
+                    tool: ['console', 'elements', 'resources', 'info', 'snippets', 'settings']
+                  });
+                  return origInit.call(this, safeOptions);
+                } catch (e2) {}
+              }
+            };
+          }
+          return obj;
+        }
+
+        if (_eruda) {
+          wrapEruda(_eruda);
+        } else {
+          try {
+            Object.defineProperty(window, 'eruda', {
+              configurable: true,
+              enumerable: true,
+              get: function() { return _eruda; },
+              set: function(v) { _eruda = wrapEruda(v); }
+            });
+          } catch (e) {}
+        }
+
+        // Suppress benign Eruda network init error message if caught by parent logger
+        var origConsoleError = console.error;
+        console.error = function() {
+          var firstArg = arguments[0];
+          if (typeof firstArg === 'string' && firstArg.indexOf('[Eruda] Something wrong when initializing tool network') !== -1) {
+            return;
+          }
+          return origConsoleError.apply(this, arguments);
+        };
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
